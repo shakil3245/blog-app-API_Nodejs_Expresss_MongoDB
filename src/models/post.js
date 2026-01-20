@@ -6,6 +6,10 @@ const postSchema = new mongoose.Schema({
   author: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   categories: [String],
   tags: [String],
+  image: {
+      public_id: String,
+      url: String
+    },
   status: { type: String, enum: ['draft', 'published'], default: 'draft' },
   likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
 }, { timestamps: true });

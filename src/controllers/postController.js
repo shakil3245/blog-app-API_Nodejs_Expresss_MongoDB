@@ -1,13 +1,44 @@
 const Post = require('../models/post');
-// all the Controller functions for CRUD
+const cloudinary = require('../config/cloudinary');
+const fs = require('fs-extra');
+
+//post blogs
+
 exports.createPost = async (req, res) => {
   try {
-    const post = await Post.create({ ...req.body, author: req.user._id });
+
+    //upload image to Cloudinary
+    let imageData = {};
+
+    // Upload image to Cloudinary if exists
+    if (req.file) {
+      const result = await cloudinary.uploader.upload(req.file.path, {
+        folder: 'blog-posts',
+      });
+      // 🧹 Remove temp file
+      await fs.unlink(req.file.path);
+
+      imageData = {
+        public_id: result.public_id,
+        url: result.secure_url
+      };
+    }
+
+    const post = await Post.create({
+      title: req.body.title,
+      body: req.body.body,
+      categories: req.body.categories,
+      tags: req.body.tags,
+      status: req.body.status,
+      author: req.user._id,
+      image: imageData
+    });
+
     res.status(201).json(post);
-  } catch (err) {
-    res.status(400).json({ error: err.message });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
   }
-};
+}
 
 exports.getPosts = async (req, res) => {
   const posts = await Post.find({ status: 'published' }).populate('author', 'name avatar');
@@ -19,17 +50,42 @@ exports.getPost = async (req, res) => {
   if(!post) return res.status(404).json({ error: 'Post not found' });
   res.json(post);
 };
-
+//need to work
 exports.updatePost = async (req, res) => {
   const post = await Post.findByIdAndUpdate(req.params.id, req.body, { new: true });
   if(!post) return res.status(404).json({ error: 'Post not found' });
   res.json(post);
 };
 
+
+
 exports.deletePost = async (req, res) => {
-  const post = await Post.findByIdAndDelete(req.params.id);
-  if(!post) return res.status(404).json({ error: 'Post not found' });
-  res.json({ message: 'Post deleted' });
+  try {
+    const post = await Post.findById(req.params.id);
+
+    if (!post) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+
+    // Allow only admin or post author
+    if (
+      req.user.role !== 'admin' &&
+      post.author.toString() !== req.user._id.toString()
+    ) {
+      return res.status(403).json({ error: 'Unauthorized' });
+    }
+
+    // Delete image from Cloudinary if exists
+    if (post.image?.public_id) {
+      await cloudinary.uploader.destroy(post.image.public_id);
+    }
+
+    await post.deleteOne();
+
+    res.json({ message: 'Post and image deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 };
 
 

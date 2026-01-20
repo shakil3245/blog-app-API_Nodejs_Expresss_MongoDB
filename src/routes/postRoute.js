@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const upload = require('../middleware/uploadMiddleware');
 const { createPost, getPosts, getPost, updatePost, deletePost,searchPosts } = require('../controllers/postController');
 const protect = require('../middleware/auth');
 const authorize = require('../middleware/roles');
@@ -8,7 +9,7 @@ router.get('/search', searchPosts);
 
 router.route('/')
   .get(getPosts)
-  .post(protect, authorize('author', 'admin'), createPost);
+  .post(protect, authorize('author', 'admin'),upload.single('image'),createPost);
 
 router.route('/:id')
   .get(getPost)
