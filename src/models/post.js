@@ -10,7 +10,7 @@ const postSchema = new mongoose.Schema({
       public_id: String,
       url: String
     },
-  status: { type: String, enum: ['draft', 'published'], default: 'draft' },
+  status: { type: String, enum: ['draft', 'published'], default: 'published' },
   likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
 }, { timestamps: true });
 

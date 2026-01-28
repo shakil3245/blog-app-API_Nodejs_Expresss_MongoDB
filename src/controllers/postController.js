@@ -15,7 +15,7 @@ exports.createPost = async (req, res) => {
       const result = await cloudinary.uploader.upload(req.file.path, {
         folder: 'blog-posts',
       });
-      // 🧹 Remove temp file
+      // // 🧹 Remove temp file
       await fs.unlink(req.file.path);
 
       imageData = {
@@ -40,8 +40,15 @@ exports.createPost = async (req, res) => {
   }
 }
 
+
+
 exports.getPosts = async (req, res) => {
   const posts = await Post.find({ status: 'published' }).populate('author', 'name avatar');
+  res.json(posts);
+};
+
+exports.getAllPosts = async (req, res) => {
+  const posts = await Post.find().populate('author', 'name avatar');
   res.json(posts);
 };
 
@@ -50,6 +57,7 @@ exports.getPost = async (req, res) => {
   if(!post) return res.status(404).json({ error: 'Post not found' });
   res.json(post);
 };
+
 //need to work
 exports.updatePost = async (req, res) => {
   const post = await Post.findByIdAndUpdate(req.params.id, req.body, { new: true });
